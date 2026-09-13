@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>OS Fundamentals — Flashcard Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eef1f2;
+    --panel:#ffffff;
+    --ink:#14181c;
+    --ink-soft:#565f66;
+    --line:#dde2e5;
+    --accent:#1f6f5c;
+    --accent-soft:#e3f0ec;
+    --amber:#b9701f;
+    --amber-soft:#f6e9d8;
+    --danger:#a83c3c;
+    --radius:14px;
+    --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+  body{
+    font-family:var(--sans);
+    background:var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+    min-height:100dvh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:28px 16px calc(60px + env(safe-area-inset-bottom));
+    padding-left:calc(16px + env(safe-area-inset-left));
+    padding-right:calc(16px + env(safe-area-inset-right));
+    -webkit-tap-highlight-color:transparent;
+  }
+  .wrap{width:100%;max-width:760px;margin:0 auto;}
+  button, .tab{touch-action:manipulation;}
+
+  /* Header */
+  header{margin-bottom:22px;}
+  .kicker{
+    font-family:var(--mono);
+    font-size:12.5px;
+    letter-spacing:0.02em;
+    color:var(--accent);
+    margin:0 0 6px;
+  }
+  h1{
+    font-size:26px;
+    font-weight:700;
+    margin:0 0 4px;
+    letter-spacing:-0.01em;
+  }
+  .sub{
+    color:var(--ink-soft);
+    font-size:14.5px;
+    margin:0;
+  }
+
+  /* Tabs */
+  .tabs{
+    display:flex;
+    gap:6px;
+    margin:22px 0 16px;
+    flex-wrap:wrap;
+  }
+  .tab{
+    font-family:var(--mono);
+    font-size:12.5px;
+    padding:8px 12px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    color:var(--ink-soft);
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease, border-color .15s ease;
+    white-space:nowrap;
+  }
+  .tab:hover{border-color:var(--accent);}
+  .tab.active{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+  }
+
+  /* Progress */
+  .progress-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:14px;
+    gap:12px;
+  }
+  .progress-text{
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+  .progress-track{
+    flex:1;
+    height:6px;
+    background:var(--line);
+    border-radius:999px;
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    background:var(--accent);
+    width:0%;
+    transition:width .25s ease;
+  }
+
+  /* Card */
+  .stage{
+    perspective:1600px;
+    margin-bottom:18px;
+  }
+  .card{
+    position:relative;
+    width:100%;
+    min-height:280px;
+    cursor:pointer;
+    transform-style:preserve-3d;
+    transition:transform .5s cubic-bezier(.2,.8,.2,1);
+  }
+  .card.flipped{transform:rotateY(180deg);}
+  .face{
+    position:absolute;
+    inset:0;
+    backface-visibility:hidden;
+    border-radius:var(--radius);
+    border:1px solid var(--line);
+    background:var(--panel);
+    padding:32px 30px;
+    display:flex;
+    flex-direction:column;
+    box-shadow:0 1px 2px rgba(20,24,28,0.04);
+  }
+  .face .tag{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--accent);
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    margin-bottom:14px;
+  }
+  .face .body{
+    flex:1;
+    display:flex;
+    align-items:center;
+    font-size:19px;
+    line-height:1.5;
+    font-weight:600;
+  }
+  .face.back{
+    transform:rotateY(180deg);
+    background:var(--accent-soft);
+    border-color:#c9e2da;
+  }
+  .face.back .body{
+    font-size:16.5px;
+    font-weight:500;
+    line-height:1.6;
+  }
+  .face .hint{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--ink-soft);
+    opacity:.7;
+    margin-top:10px;
+  }
+  .known-badge{
+    position:absolute;
+    top:14px;
+    right:16px;
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--accent);
+    background:#fff;
+    border:1px solid var(--accent);
+    padding:3px 8px;
+    border-radius:999px;
+  }
+
+  /* Controls */
+  .controls{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .btn-group{display:flex;gap:8px;}
+  button{
+    font-family:var(--sans);
+    font-size:14px;
+    font-weight:600;
+    padding:10px 16px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    color:var(--ink);
+    cursor:pointer;
+    transition:background .15s ease, border-color .15s ease, transform .1s ease;
+  }
+  button:hover{border-color:var(--ink-soft);}
+  button:active{transform:scale(0.97);}
+  button.primary{
+    background:var(--ink);
+    color:#fff;
+    border-color:var(--ink);
+  }
+  button.primary:hover{background:#000;}
+  button.mark{
+    background:var(--amber-soft);
+    border-color:#eccb9b;
+    color:var(--amber);
+  }
+  button.mark.done{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+  }
+  button.icon{padding:10px 13px;}
+  button:disabled{opacity:.4;cursor:not-allowed;}
+
+  .toolbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:22px;
+    padding-top:16px;
+    border-top:1px solid var(--line);
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .toolbar .left, .toolbar .right{display:flex;gap:8px;flex-wrap:wrap;}
+  .link-btn{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--ink-soft);
+    background:none;
+    border:none;
+    padding:6px 4px;
+    text-decoration:underline;
+    text-underline-offset:3px;
+  }
+  .link-btn:hover{color:var(--ink);}
+
+  .hint-row{
+    text-align:center;
+    margin-top:18px;
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--ink-soft);
+    opacity:.75;
+  }
+
+  .empty{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--ink-soft);
+    font-size:15px;
+  }
+  .empty strong{color:var(--ink);}
+
+  @media (max-width:680px){
+    .wrap{max-width:100%;}
+    .card{min-height:260px;}
+  }
+
+  @media (max-width:520px){
+    body{padding:20px 14px calc(48px + env(safe-area-inset-bottom));}
+    .face{padding:22px 18px;}
+    .face .body{font-size:16.5px;}
+    .face.back .body{font-size:15.5px;}
+    h1{font-size:20px;}
+    .sub{font-size:13.5px;}
+    .card{min-height:240px;}
+    .controls{justify-content:center;}
+    .controls .btn-group{order:2;}
+    .controls .primary{order:1;flex:1 1 100%;}
+    .controls .mark{order:3;flex:1 1 100%;}
+    .toolbar{justify-content:center;text-align:center;}
+    .hint-row{display:none;}
+  }
+
+  @media (max-width:360px){
+    .tab{font-size:11.5px;padding:7px 10px;}
+    .face{padding:18px 14px;}
+    .face .body{font-size:15.5px;}
+    button{font-size:13px;padding:9px 13px;}
+  }
+
+  @media (min-width:900px){
+    .wrap{max-width:820px;}
+    .face .body{font-size:20.5px;}
+  }
+
+  @media (hover:none) and (pointer:coarse){
+    .face .hint{content:"tap card to flip";}
+    button, .tab{min-height:40px;}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .card{transition:none;}
+    .progress-fill{transition:none;}
+  }
+
+  @media print{
+    .tabs, .controls, .toolbar, .hint-row, .progress-row{display:none;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="kicker">$ study --exam-prep</p>
+    <h1>OS Fundamentals Flashcards</h1>
+    <p class="sub">UNIX History · File Systems &amp; Disk Partitioning · System Startup</p>
+  </header>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div class="progress-row">
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-text" id="progressText">0/0</div>
+  </div>
+
+  <div id="cardArea">
+    <div class="stage">
+      <div class="card" id="card">
+        <div class="face front">
+          <span class="tag">Question</span>
+          <div class="body" id="frontText"></div>
+          <span class="hint">tap card to flip</span>
+          <span class="known-badge" id="knownBadgeFront" style="display:none;">✓ known</span>
+        </div>
+        <div class="face back">
+          <span class="tag">Answer</span>
+          <div class="body" id="backText"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="btn-group">
+        <button class="icon" id="prevBtn" title="Previous (←)">←</button>
+        <button class="icon" id="nextBtn" title="Next (→)">→</button>
+      </div>
+      <button class="primary" id="flipBtn">Flip card (space)</button>
+      <button class="mark" id="markBtn">Mark as known</button>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="left">
+      <button class="link-btn" id="shuffleBtn">🔀 shuffle deck</button>
+      <button class="link-btn" id="unknownBtn">show unknown only</button>
+    </div>
+    <div class="right">
+      <button class="link-btn" id="resetBtn">reset progress</button>
+    </div>
+  </div>
+
+  <p class="hint-row">← → navigate · space or click to flip · K to mark known</p>
+</div>
+
+<script>
+const DECKS = {
+  unix: {
+    label: "UNIX History",
+    cards: [
+      { q: "In what year was UNIX developed, and at which company?", a: "1969, developed at Bell Labs." },
+      { q: "Who were the two key figures behind UNIX's creation?", a: "Ken Thompson and Dennis Ritchie." },
+      { q: "What operating system existed before UNIX, and who developed it?", a: "Multics, developed jointly by MIT, Bell Labs, and General Electric." },
+      { q: "Why did Multics fail to succeed as a project?", a: "It became too complex and difficult to maintain, and Bell Labs withdrew from the project in 1969." },
+      { q: "Who developed the first version of UNIX, and for what hardware was it initially created?", a: "Ken Thompson, at Bell Labs, initially created for the PDP-7." },
+      { q: "What was UNIX originally called before it got its final name?", a: "UNICS." },
+      { q: "How was UNIX designed differently from Multics?", a: "It was designed to be simpler than Multics." },
+      { q: "In what year was UNIX rewritten in the C programming language?", a: "1973." },
+      { q: "Who helped develop the C programming language?", a: "Dennis Ritchie." },
+      { q: "Why was rewriting UNIX in C so significant?", a: "It made UNIX more portable — adaptable to different computers — which helped it spread to other institutions." },
+      { q: "Where was BSD (Berkeley Software Distribution) developed?", a: "At UC Berkeley." },
+      { q: "Name some commercial UNIX versions that emerged as UNIX grew.", a: "AIX, Sun OS/Sun Solaris, UNIX System V, and HP-UX." },
+      { q: "What is POSIX, and when was it introduced?", a: "A standard introduced in the 1980s (established 1988) created to improve UNIX compatibility and establish common OS standards across systems." },
+      { q: "What did POSIX help accomplish for software developers?", a: "It helped programs work across different UNIX systems." },
+      { q: "Who created the Linux kernel, and in what year was it released?", a: "Linus Torvalds, released in 1991." },
+      { q: "Is Linux the same thing as UNIX?", a: "No. Linux is Unix-like and was inspired by UNIX concepts, but it is not UNIX itself." },
+      { q: "Where is Linux widely used today?", a: "Servers, supercomputers, cloud systems, and embedded devices." },
+      { q: "Where is UNIX still used in computing today?", a: "Servers, enterprise systems, research environments, and workstations." },
+      { q: "Which modern operating system has a UNIX-based foundation?", a: "macOS." },
+      { q: "According to the UNIX timeline, what happened in 1969, 1973, and 1991?", a: "1969 — UNIX was created. 1973 — UNIX was rewritten in C. 1991 — Linux was created." },
+      { q: "According to the timeline, what happened in the 1970s, 1980s, and 1988?", a: "1970s — UNIX spread to universities. 1980s — commercial UNIX systems grew. 1988 — the POSIX standard was established." },
+      { q: "Summarize UNIX's overall legacy, per the conclusion.", a: "UNIX was created at Bell Labs in 1969 by Ken Thompson (with Dennis Ritchie's help on UNIX and C); it became portable, powerful, and widely used, and its concepts still influence modern operating systems today." }
+    ]
+  },
+  filesystem: {
+    label: "File Systems & Devices",
+    cards: [
+      { q: "What is a storage device?", a: "A piece of hardware that is used to store data." },
+      { q: "What is a disk?", a: "A physical storage media used to hold data." },
+      { q: "What is a drive?", a: "A mechanism for writing data to, and reading data from, a disk." },
+      { q: "What is a partition?", a: "A logical division of a disk with a defined size." },
+      { q: "How many partitions does MBR (Master Boot Record) support, and what is its max disk size?", a: "Up to 4 partitions per disk, and disks up to 2TB." },
+      { q: "How many partitions does GPT (GUID Partition Table) support, and what is its max disk size?", a: "At least 128 partitions, and disks up to at least 9.44ZB." },
+      { q: "What is a volume?", a: "A formatted storage area with a file system." },
+      { q: "What three requirements does a volume need?", a: "A partition, a file system, and it must be mounted for access." },
+      { q: "Name four example file systems mentioned.", a: "NTFS, FAT32, exFAT, and Ext4." },
+      { q: "What is a single partition volume?", a: "A volume created by formatting one single partition with a file system." },
+      { q: "What is a multi-partition volume?", a: "A single volume created by combining multiple partitions from one or more disks (for example, using RAID or by simply combining disks without RAID)." },
+      { q: "What is a non-partition volume? Give two examples.", a: "Storage media formatted directly into a volume without first creating a partition — examples include floppy disks and CDs." },
+      { q: "In the 1960s–1980s, which drive letters did DOS assign to floppy drives versus hard drives?", a: "A: and B: were assigned to floppy drives, and C: onward to hard drives." },
+      { q: "What was true about most hard drives and micro computers (CP/M & DOS) during the 1960s–1980s?", a: "Most hard drives had removable disks, and CP/M & DOS microcomputers primarily used floppy drives with removable disks." },
+      { q: "List the steps to create a usable volume, in order.", a: "1) Initialize the disk and choose MBR or GPT. 2) Create a partition. 3) Assign a drive letter. 4) Format the partition. 5) The volume becomes usable." },
+      { q: "At what point in the volume-creation process is the volume still unusable?", a: "Right after initializing the disk and creating the partition, before a drive letter is assigned and it is formatted." },
+      { q: "What is device manipulation?", a: "The management and configuration of hardware devices to ensure they function correctly." },
+      { q: "List the common device manipulation tasks.", a: "Install or update drivers, enable or disable devices, configure device settings, troubleshoot hardware, and uninstall or reinstall a device." }
+    ]
+  },
+  startup: {
+    label: "System Startup",
+    cards: [
+      { q: "What does the system startup process do overall?", a: "It initializes hardware components, checks whether hardware functions properly, finds and loads the operating system into memory, starts essential system services, and presents the login or desktop screen." },
+      { q: "Step 1 — Power On: what happens?", a: "The startup process begins when the user presses the power button, and the power supply provides electricity to the computer's components." },
+      { q: "Step 2 — What are BIOS and UEFI?", a: "Firmware interfaces responsible for initializing computer hardware before the operating system starts." },
+      { q: "Step 2 — List the responsibilities of BIOS/UEFI.", a: "Initializing hardware, detecting storage devices, checking system configuration, performing startup diagnostics, selecting a boot device, and starting the bootloader." },
+      { q: "Step 3 — What is POST, and what does it do?", a: "POST (Power-On Self-Test) identifies devices while checking whether necessary components are functioning correctly." },
+      { q: "Step 3 — How does POST report a problem?", a: "Through an error message, a warning, a diagnostic code, or beep codes on some systems." },
+      { q: "Step 4 — After hardware initialization, what does the firmware look for, and what are examples?", a: "It looks for a bootable device — examples include an internal SSD, internal HDD, or USB flash drive." },
+      { q: "Step 5 — What are the bootloader's functions?", a: "Finding the operating system, loading necessary OS components, preparing the system for OS execution, and passing control to the operating system." },
+      { q: "Step 6 — What important components does the OS load during Operating System Loading?", a: "The kernel, hardware drivers, system files, memory management components, security services, and background services." },
+      { q: "Step 7 — What do drivers do, and what are examples?", a: "Drivers allow the operating system to communicate with hardware; examples include graphics, audio, network, storage, and USB drivers." },
+      { q: "Step 8 — What authentication methods may be used at User Login?", a: "Password, PIN, fingerprint, facial recognition, and other supported methods." },
+      { q: "Step 8 — What must happen before the system grants access at login?", a: "The system verifies the user's credentials before providing access." },
+      { q: "Step 9 — What happens at System Ready, after a successful login?", a: "The operating system loads the user's environment — the desktop and applications." },
+      { q: "List all 9 steps of the system startup process in order.", a: "1) Power On, 2) BIOS and UEFI, 3) Hardware Initialization and POST, 4) Boot Device Selection, 5) Bootloader, 6) Operating System Loading, 7) Drivers and Services, 8) User Login, 9) System Ready." }
+    ]
+  }
+};
+
+const deckOrder = ["all", "unix", "filesystem", "startup"];
+let currentDeckKey = "all";
+let order = [];
+let idx = 0;
+let flipped = false;
+let showUnknownOnly = false;
+const known = {}; // id -> true
+
+function cardId(deckKey, i){ return deckKey + "-" + i; }
+
+function allCardsFlat(){
+  let out = [];
+  ["unix","filesystem","startup"].forEach(dk=>{
+    DECKS[dk].cards.forEach((c,i)=> out.push({...c, id: cardId(dk,i), deck: dk}));
+  });
+  return out;
+}
+
+function getDeckCards(deckKey){
+  if(deckKey === "all") return allCardsFlat();
+  return DECKS[deckKey].cards.map((c,i)=>({...c, id: cardId(deckKey,i), deck: deckKey}));
+}
+
+function buildTabs(){
+  const tabsEl = document.getElementById("tabs");
+  tabsEl.innerHTML = "";
+  const labels = { all: "All Topics", unix: DECKS.unix.label, filesystem: DECKS.filesystem.label, startup: DECKS.startup.label };
+  deckOrder.forEach(dk=>{
+    const b = document.createElement("button");
+    b.className = "tab" + (dk === currentDeckKey ? " active" : "");
+    b.textContent = labels[dk];
+    b.onclick = () => switchDeck(dk);
+    tabsEl.appendChild(b);
+  });
+}
+
+function switchDeck(dk){
+  currentDeckKey = dk;
+  showUnknownOnly = false;
+  document.getElementById("unknownBtn").textContent = "show unknown only";
+  buildTabs();
+  resetOrder();
+}
+
+function resetOrder(){
+  let cards = getDeckCards(currentDeckKey);
+  if(showUnknownOnly) cards = cards.filter(c => !known[c.id]);
+  order = cards;
+  idx = 0;
+  flipped = false;
+  render();
+}
+
+function render(){
+  const area = document.getElementById("cardArea");
+  const total = order.length;
+  if(total === 0){
+    area.innerHTML = '<div class="empty"><strong>Nothing to show.</strong><br>Every card here is already marked known — nice work. Switch deck or turn off "unknown only" to keep reviewing.</div>';
+    document.getElementById("progressFill").style.width = "0%";
+    document.getElementById("progressText").textContent = "0/0";
+    return;
+  }
+  // rebuild card DOM if it was replaced by empty state
+  if(!document.getElementById("card")){
+    area.innerHTML = `
+    <div class="stage">
+      <div class="card" id="card">
+        <div class="face front">
+          <span class="tag">Question</span>
+          <div class="body" id="frontText"></div>
+          <span class="hint">tap card to flip</span>
+          <span class="known-badge" id="knownBadgeFront" style="display:none;">✓ known</span>
+        </div>
+        <div class="face back">
+          <span class="tag">Answer</span>
+          <div class="body" id="backText"></div>
+        </div>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="btn-group">
+        <button class="icon" id="prevBtn" title="Previous (←)">←</button>
+        <button class="icon" id="nextBtn" title="Next (→)">→</button>
+      </div>
+      <button class="primary" id="flipBtn">Flip card (space)</button>
+      <button class="mark" id="markBtn">Mark as known</button>
+    </div>`;
+    attachCardListeners();
+  }
+
+  const c = order[idx];
+  document.getElementById("frontText").textContent = c.q;
+  document.getElementById("backText").textContent = c.a;
+  document.getElementById("card").classList.toggle("flipped", flipped);
+  document.getElementById("knownBadgeFront").style.display = known[c.id] ? "inline-block" : "none";
+
+  const markBtn = document.getElementById("markBtn");
+  markBtn.textContent = known[c.id] ? "✓ Known" : "Mark as known";
+  markBtn.classList.toggle("done", !!known[c.id]);
+
+  const knownCount = allCardsFlat().filter(x => known[x.id]).length;
+  const totalCount = allCardsFlat().length;
+  document.getElementById("progressText").textContent = `${idx+1}/${total} in view · ${knownCount}/${totalCount} known`;
+  document.getElementById("progressFill").style.width = ((idx+1)/total*100) + "%";
+}
+
+function flipCard(){
+  if(order.length === 0) return;
+  flipped = !flipped;
+  document.getElementById("card").classList.toggle("flipped", flipped);
+}
+
+function next(){
+  if(order.length === 0) return;
+  flipped = false;
+  idx = (idx + 1) % order.length;
+  render();
+}
+function prev(){
+  if(order.length === 0) return;
+  flipped = false;
+  idx = (idx - 1 + order.length) % order.length;
+  render();
+}
+function toggleKnown(){
+  if(order.length === 0) return;
+  const c = order[idx];
+  known[c.id] = !known[c.id];
+  if(showUnknownOnly && known[c.id]){
+    // remove from view
+    order.splice(idx,1);
+    if(idx >= order.length) idx = 0;
+    flipped = false;
+  }
+  render();
+}
+function shuffleDeck(){
+  for(let i = order.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i+1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  idx = 0;
+  flipped = false;
+  render();
+}
+function toggleUnknownOnly(){
+  showUnknownOnly = !showUnknownOnly;
+  document.getElementById("unknownBtn").textContent = showUnknownOnly ? "show all cards" : "show unknown only";
+  resetOrder();
+}
+function resetProgress(){
+  if(!confirm("Reset all known-card progress? This cannot be undone.")) return;
+  Object.keys(known).forEach(k => delete known[k]);
+  resetOrder();
+}
+
+function attachCardListeners(){
+  const cardEl = document.getElementById("card");
+  cardEl.onclick = flipCard;
+  document.getElementById("flipBtn").onclick = flipCard;
+  document.getElementById("nextBtn").onclick = next;
+  document.getElementById("prevBtn").onclick = prev;
+  document.getElementById("markBtn").onclick = toggleKnown;
+  attachSwipe(cardEl);
+}
+
+// Touch swipe support: left/right to navigate, so phones and tablets
+// don't have to rely on the arrow buttons alone.
+function attachSwipe(el){
+  let startX = 0, startY = 0, tracking = false;
+  const THRESHOLD = 40;
+  el.addEventListener("touchstart", (e)=>{
+    if(e.touches.length !== 1) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    tracking = true;
+  }, {passive:true});
+  el.addEventListener("touchend", (e)=>{
+    if(!tracking) return;
+    tracking = false;
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    if(Math.abs(dx) > THRESHOLD && Math.abs(dx) > Math.abs(dy) * 1.5){
+      if(dx < 0) next(); else prev();
+    }
+  }, {passive:true});
+}
+
+document.getElementById("shuffleBtn").onclick = shuffleDeck;
+document.getElementById("unknownBtn").onclick = toggleUnknownOnly;
+document.getElementById("resetBtn").onclick = resetProgress;
+
+document.addEventListener("keydown", (e)=>{
+  if(e.code === "Space"){ e.preventDefault(); flipCard(); }
+  else if(e.code === "ArrowRight"){ next(); }
+  else if(e.code === "ArrowLeft"){ prev(); }
+  else if(e.key === "k" || e.key === "K"){ toggleKnown(); }
+});
+
+attachCardListeners();
+buildTabs();
+resetOrder();
+</script>
+</body>
+</html>
